@@ -83,9 +83,7 @@ import com.example.ui.onboarding.OnboardingScreen
 import com.example.ui.settings.SettingsScreen
 import com.example.ui.theme.FinanceExpenseRed
 import com.example.ui.theme.VidaSimplesTheme
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -166,16 +164,10 @@ class MainActivity : ComponentActivity() {
                         putExtra(RecognizerIntent.EXTRA_PROMPT, "Fale o valor e descrição (ex: 35 mercado)")
                     }
                     speechLauncher.launch(intent)
-                } catch (e: IllegalStateException) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Reconhecimento de voz indisponível no momento.",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 } catch (e: Exception) {
                     Toast.makeText(
                         this@MainActivity,
-                        "Erro ao iniciar reconhecimento de voz: ${e.message}",
+                        "Reconhecimento de voz indisponível no momento.",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -240,7 +232,7 @@ class MainActivity : ComponentActivity() {
                                          quickRegisterInitialDescription = ""
                                          quickRegisterInitialCategoryId = null
                                          showQuickRegisterDialog = true
-                                     },
+                                    },
                                     availableBalanceCentavos = uiState.totalAvailableBalance,
                                     monthIncomeCentavos = uiState.monthIncomeCentavos,
                                     monthExpenseCentavos = uiState.monthExpenseCentavos,
@@ -368,23 +360,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     },
                                     onTransferSave = { sourceAccountId, targetAccountId, amountCentavos, description ->
-                                        // Validate that both accounts exist
-                                        val sourceAccount = accounts.find { it.id == sourceAccountId }
-                                        val targetAccount = accounts.find { it.id == targetAccountId }
-                                        
-                                        if (sourceAccount == null || targetAccount == null) {
-                                            Toast.makeText(
-                                                this@MainActivity,
-                                                "Uma ou ambas as contas não encontradas!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            return@FinanceDashboardScreen
-                                        }
-                                        
-                                        val catId = categories.find { it.name == "Transferência" }?.id 
-                                            ?: categories.firstOrNull()?.id 
-                                            ?: 1L
-                                        
+                                        val catId = categories.firstOrNull()?.id ?: 1L
                                         viewModel.addTransaction(
                                             type = TransactionType.TRANSFER,
                                             amountCentavos = amountCentavos,
@@ -572,7 +548,7 @@ fun UpcomingBillsModalSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale("pt", "BR")) }
+    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -622,18 +598,8 @@ fun UpcomingBillsModalSheet(
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    val localDate = LocalDate.ofInstant(
-                                        java.time.Instant.ofEpochMilli(bill.dueDate),
-                                        ZoneId.systemDefault()
-                                    )
-                                    val formattedDate = localDate.format(dateFormatter)
-                                    val daysStatusText = when {
-                                        bill.daysUntilDue == 0 -> "Hoje"
-                                        bill.daysUntilDue < 0 -> "Vencida há ${-bill.daysUntilDue} dias"
-                                        else -> "em ${bill.daysUntilDue} dias"
-                                    }
                                     Text(
-                                        text = "${bill.categoryName} • $formattedDate ($daysStatusText)",
+                                        text = "${bill.categoryName} • ${dateFormat.format(Date(bill.dueDate))} (${if (bill.daysUntilDue == 0) "Hoje" else "em ${bill.daysUntilDue} dias"})",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -652,3 +618,4 @@ fun UpcomingBillsModalSheet(
         }
     }
 }
+
