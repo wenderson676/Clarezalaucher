@@ -71,7 +71,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         recurringDao = database.recurringDao(),
         goalDao = database.goalDao(),
         budgetDao = database.budgetDao(),
-        settingsDao = database.settingsDao()
+        settingsDao = database.settingsDao(),
+        database = database
     )
 
     val appManager = AppManager(application)

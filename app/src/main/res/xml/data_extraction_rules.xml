@@ -1,19 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
--->
+<?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- Exclude local unencrypted SQLite financial database from unauthenticated cloud backups -->
+        <include domain="sharedpref" path="."/>
+        <exclude domain="database" path="vidasimples_database"/>
+        <exclude domain="database" path="vidasimples_database-wal"/>
+        <exclude domain="database" path="vidasimples_database-shm"/>
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- Allow encrypted device-to-device migration between user's devices -->
+        <include domain="sharedpref" path="."/>
+        <include domain="database" path="vidasimples_database"/>
+        <include domain="database" path="vidasimples_database-wal"/>
+        <include domain="database" path="vidasimples_database-shm"/>
     </device-transfer>
-    -->
 </data-extraction-rules>

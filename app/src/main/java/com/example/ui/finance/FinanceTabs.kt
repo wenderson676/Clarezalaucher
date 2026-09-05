@@ -1402,8 +1402,7 @@ fun ForecastTabContent(
         }
 
         // Selected Day Details Card
-        if (selectedDay != null) {
-            val sDay = selectedDay!!
+        selectedDay?.let { sDay ->
             val dayRecurring = recurring.filter { it.dueDay == sDay }
             val dayPendingTransactions = transactions.filter { tx ->
                 if (tx.isPaid) return@filter false

@@ -1,5 +1,6 @@
 package com.example.data.repository
 
+import androidx.room.withTransaction
 import com.example.data.dao.AccountDao
 import com.example.data.dao.BudgetDao
 import com.example.data.dao.CategoryDao
@@ -7,6 +8,7 @@ import com.example.data.dao.GoalDao
 import com.example.data.dao.RecurringDao
 import com.example.data.dao.SettingsDao
 import com.example.data.dao.TransactionDao
+import com.example.data.db.AppDatabase
 import com.example.data.model.AccountEntity
 import com.example.data.model.BudgetEntity
 import com.example.data.model.CategoryEntity
@@ -95,7 +97,8 @@ class FinanceRepository(
     private val recurringDao: RecurringDao,
     private val goalDao: GoalDao,
     private val budgetDao: BudgetDao,
-    private val settingsDao: SettingsDao
+    private val settingsDao: SettingsDao,
+    private val database: AppDatabase? = null
 ) {
     val allTransactions: Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
     val allAccounts: Flow<List<AccountEntity>> = accountDao.getAllAccounts()
@@ -208,10 +211,13 @@ class FinanceRepository(
 
                 // Check if already paid or received this month
                 val isPaidThisMonth = monthTransactions.any { tx ->
-                    tx.type == rec.type && (
-                        tx.description.contains(rec.name, ignoreCase = true) ||
-                        tx.description.startsWith("Pagamento: ${rec.name}", ignoreCase = true) ||
-                        tx.description.startsWith("Recebimento: ${rec.name}", ignoreCase = true)
+                    tx.isPaid && (
+                        tx.recurrenceRule == "RECURRING_ID:${rec.id}" ||
+                        (tx.accountId == rec.accountId && tx.categoryId == rec.categoryId && tx.type == rec.type && (
+                            tx.description.equals(rec.name, ignoreCase = true) ||
+                            tx.description.equals("Pagamento: ${rec.name}", ignoreCase = true) ||
+                            tx.description.equals("Recebimento: ${rec.name}", ignoreCase = true)
+                        ))
                     )
                 }
 
@@ -252,11 +258,11 @@ class FinanceRepository(
                 }
             }
 
-            // Also include pending (unpaid) transactions (future or past)
+            // Also include pending (unpaid) transactions strictly within upcoming horizon (0..daysAhead)
             val pendingTxs = monthTransactions.filter { !it.isPaid && it.type != "TRANSFER" }
             for (tx in pendingTxs) {
                 val diffDays = ((tx.date - now) / (1000 * 60 * 60 * 24)).toInt()
-                if (diffDays <= daysAhead) {
+                if (diffDays in 0..daysAhead) {
                     val isIncome = tx.type == "INCOME"
                     val catName = categories.find { it.id == tx.categoryId }?.name ?: if (isIncome) "Renda" else "Contas"
                     result.add(
@@ -266,7 +272,7 @@ class FinanceRepository(
                             amount = tx.amount,
                             dueDate = tx.date,
                             categoryName = catName,
-                            daysUntilDue = diffDays, // Can be negative for overdue
+                            daysUntilDue = diffDays,
                             isIncome = isIncome,
                             isPaidThisMonth = false,
                             recurringId = null
@@ -563,10 +569,58 @@ class FinanceRepository(
     }
 
     // CRUD Methods
-    suspend fun insertTransaction(tx: TransactionEntity): Long = transactionDao.insertTransaction(tx)
-    suspend fun updateTransaction(tx: TransactionEntity) = transactionDao.updateTransaction(tx)
-    suspend fun deleteTransaction(tx: TransactionEntity) = transactionDao.deleteTransaction(tx)
-    suspend fun deleteTransactionById(id: Long) = transactionDao.deleteTransactionById(id)
+    suspend fun insertTransaction(tx: TransactionEntity): Long {
+        return if (database != null) {
+            database.withTransaction {
+                transactionDao.insertTransaction(tx)
+            }
+        } else {
+            transactionDao.insertTransaction(tx)
+        }
+    }
+
+    suspend fun insertTransfer(transfer: TransactionEntity): Long {
+        require(transfer.type == "TRANSFER") { "Transação deve ser do tipo TRANSFER" }
+        require(transfer.targetAccountId != null) { "Conta de destino é obrigatória para transferências" }
+        return if (database != null) {
+            database.withTransaction {
+                transactionDao.insertTransaction(transfer)
+            }
+        } else {
+            transactionDao.insertTransaction(transfer)
+        }
+    }
+
+    suspend fun updateTransaction(tx: TransactionEntity) {
+        if (database != null) {
+            database.withTransaction {
+                transactionDao.updateTransaction(tx)
+            }
+        } else {
+            transactionDao.updateTransaction(tx)
+        }
+    }
+
+    suspend fun deleteTransaction(tx: TransactionEntity) {
+        if (database != null) {
+            database.withTransaction {
+                transactionDao.deleteTransaction(tx)
+            }
+        } else {
+            transactionDao.deleteTransaction(tx)
+        }
+    }
+
+    suspend fun deleteTransactionById(id: Long) {
+        if (database != null) {
+            database.withTransaction {
+                transactionDao.deleteTransactionById(id)
+            }
+        } else {
+            transactionDao.deleteTransactionById(id)
+        }
+    }
+
     suspend fun getTransactionsFromGroup(groupId: String, startInstallment: Int) = transactionDao.getTransactionsFromGroup(groupId, startInstallment)
     suspend fun getAllTransactionsFromGroup(groupId: String) = transactionDao.getAllTransactionsFromGroup(groupId)
     suspend fun getTransactionsByRecurrenceRule(rule: String) = transactionDao.getTransactionsByRecurrenceRule(rule)
