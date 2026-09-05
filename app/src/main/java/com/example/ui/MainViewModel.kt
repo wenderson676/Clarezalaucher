@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.min
 
 data class MainUiState(
     val isLoading: Boolean = true,
@@ -62,6 +63,14 @@ data class MainUiState(
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    companion object {
+        // Maximum number of transactions to prevent overflow (safety limit)
+        private const val MAX_REPEAT_COUNT = 1200 // ~100 years of monthly transactions
+        
+        // Minimum amount validation (in centavos)
+        private const val MIN_VALID_AMOUNT = 1L
+    }
 
     private val database = AppDatabase.getDatabase(application, viewModelScope)
     val financeRepository = FinanceRepository(
@@ -358,42 +367,63 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         isPaid: Boolean = true
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            val groupId = if (repeatCount > 1) java.util.UUID.randomUUID().toString() else null
-            var currentDate = date
-            val calendar = java.util.Calendar.getInstance()
-            calendar.timeInMillis = date
-            
-            for (i in 1..repeatCount) {
-                val isFuture = currentDate > System.currentTimeMillis()
-                val finalIsPaid = if (isFuture) false else isPaid
-                
-                financeRepository.insertTransaction(
-                    TransactionEntity(
-                        type = type.name,
-                        amount = amountCentavos,
-                        categoryId = categoryId,
-                        accountId = accountId,
-                        targetAccountId = targetAccountId,
-                        description = if (repeatCount > 1) "$description ($i/$repeatCount)" else description,
-                        date = currentDate,
-                        groupId = groupId,
-                        installmentNumber = i,
-                        totalInstallments = repeatCount,
-                        isPaid = finalIsPaid
-                    )
-                )
-                if (repeatFrequency == "MONTHLY") {
-                    calendar.add(java.util.Calendar.MONTH, 1)
-                } else if (repeatFrequency == "WEEKLY") {
-                    calendar.add(java.util.Calendar.WEEK_OF_YEAR, 1)
-                } else if (repeatFrequency == "BIWEEKLY") {
-                    calendar.add(java.util.Calendar.DAY_OF_YEAR, 14)
-                } else if (repeatFrequency == "DAILY") {
-                    calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
-                } else if (repeatFrequency == "YEARLY") {
-                    calendar.add(java.util.Calendar.YEAR, 1)
+            try {
+                // Validations
+                if (amountCentavos < MIN_VALID_AMOUNT) {
+                    throw IllegalArgumentException("Valor da transação deve ser maior que 0")
                 }
-                currentDate = calendar.timeInMillis
+
+                // Limit repeat count to prevent overflow
+                val safeRepeatCount = min(repeatCount.coerceAtLeast(1), MAX_REPEAT_COUNT)
+                
+                if (safeRepeatCount != repeatCount && repeatCount > MAX_REPEAT_COUNT) {
+                    throw IllegalArgumentException(
+                        "Número de repetições excede o limite máximo ($MAX_REPEAT_COUNT). " +
+                        "Usando $safeRepeatCount repetições."
+                    )
+                }
+
+                val groupId = if (safeRepeatCount > 1) java.util.UUID.randomUUID().toString() else null
+                var currentDate = date
+                val calendar = java.util.Calendar.getInstance()
+                calendar.timeInMillis = date
+
+                for (i in 1..safeRepeatCount) {
+                    val isFuture = currentDate > System.currentTimeMillis()
+                    val finalIsPaid = if (isFuture) false else isPaid
+
+                    financeRepository.insertTransaction(
+                        TransactionEntity(
+                            type = type.name,
+                            amount = amountCentavos,
+                            categoryId = categoryId,
+                            accountId = accountId,
+                            targetAccountId = targetAccountId,
+                            description = if (safeRepeatCount > 1) "$description ($i/$safeRepeatCount)" else description,
+                            date = currentDate,
+                            groupId = groupId,
+                            installmentNumber = i,
+                            totalInstallments = safeRepeatCount,
+                            isPaid = finalIsPaid
+                        )
+                    )
+
+                    // Update date based on frequency
+                    when (repeatFrequency) {
+                        "MONTHLY" -> calendar.add(java.util.Calendar.MONTH, 1)
+                        "WEEKLY" -> calendar.add(java.util.Calendar.WEEK_OF_YEAR, 1)
+                        "BIWEEKLY" -> calendar.add(java.util.Calendar.DAY_OF_YEAR, 14)
+                        "DAILY" -> calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                        "YEARLY" -> calendar.add(java.util.Calendar.YEAR, 1)
+                        else -> calendar.add(java.util.Calendar.MONTH, 1) // Default to monthly
+                    }
+                    currentDate = calendar.timeInMillis
+                }
+            } catch (e: IllegalArgumentException) {
+                // Log or handle validation error
+                android.util.Log.e("MainViewModel", "Erro ao adicionar transação: ${e.message}")
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Erro inesperado ao adicionar transação", e)
             }
         }
     }
@@ -435,7 +465,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } else if (mode == "FUTURE") {
                 if (tx.groupId != null) {
                     val groupTxs = financeRepository.getTransactionsFromGroup(tx.groupId, tx.installmentNumber ?: 1)
-                    for (txInGroup in groupTxs) { 
+                    for (txInGroup in groupTxs) {
                         financeRepository.updateTransaction(txInGroup.copy(
                             amount = tx.amount,
                             categoryId = tx.categoryId,
@@ -471,7 +501,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } else if (mode == "ALL") {
                 if (tx.groupId != null) {
                     val groupTxs = financeRepository.getAllTransactionsFromGroup(tx.groupId)
-                    for (txInGroup in groupTxs) { 
+                    for (txInGroup in groupTxs) {
                         financeRepository.updateTransaction(txInGroup.copy(
                             amount = tx.amount,
                             categoryId = tx.categoryId,
@@ -558,18 +588,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         dueDay: Int = 10
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            financeRepository.insertAccount(
-                AccountEntity(
-                    name = name,
-                    type = type,
-                    initialBalance = initialBalanceCentavos,
-                    currentBalance = initialBalanceCentavos,
-                    isActive = true,
-                    creditLimit = creditLimit,
-                    closingDay = closingDay,
-                    dueDay = dueDay
+            try {
+                // Validate day values
+                if (closingDay < 1 || closingDay > 31) {
+                    throw IllegalArgumentException("Dia de fechamento deve estar entre 1 e 31")
+                }
+                if (dueDay < 1 || dueDay > 31) {
+                    throw IllegalArgumentException("Dia de vencimento deve estar entre 1 e 31")
+                }
+
+                financeRepository.insertAccount(
+                    AccountEntity(
+                        name = name,
+                        type = type,
+                        initialBalance = initialBalanceCentavos,
+                        currentBalance = initialBalanceCentavos,
+                        isActive = true,
+                        creditLimit = creditLimit,
+                        closingDay = closingDay,
+                        dueDay = dueDay
+                    )
                 )
-            )
+            } catch (e: IllegalArgumentException) {
+                android.util.Log.e("MainViewModel", "Erro ao adicionar conta: ${e.message}")
+            }
         }
     }
 
@@ -599,7 +641,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleTransactionPaid(tx: TransactionEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            financeRepository.insertTransaction(tx.copy(isPaid = !tx.isPaid))
+            financeRepository.updateTransaction(tx.copy(isPaid = !tx.isPaid))
         }
     }
 
@@ -656,18 +698,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         frequency: String = "MONTHLY"
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            financeRepository.insertRecurring(
-                RecurringTransactionEntity(
-                    name = name,
-                    type = type,
-                    amount = amountCentavos,
-                    categoryId = categoryId,
-                    accountId = accountId,
-                    frequency = frequency,
-                    dueDay = dueDay,
-                    nextDate = System.currentTimeMillis()
+            try {
+                if (dueDay < 1 || dueDay > 31) {
+                    throw IllegalArgumentException("Dia de vencimento deve estar entre 1 e 31")
+                }
+                if (amountCentavos < MIN_VALID_AMOUNT) {
+                    throw IllegalArgumentException("Valor deve ser maior que 0")
+                }
+
+                financeRepository.insertRecurring(
+                    RecurringTransactionEntity(
+                        name = name,
+                        type = type,
+                        amount = amountCentavos,
+                        categoryId = categoryId,
+                        accountId = accountId,
+                        frequency = frequency,
+                        dueDay = dueDay,
+                        nextDate = System.currentTimeMillis()
+                    )
                 )
-            )
+            } catch (e: IllegalArgumentException) {
+                android.util.Log.e("MainViewModel", "Erro ao adicionar conta recorrente: ${e.message}")
+            }
         }
     }
 
@@ -697,7 +750,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateGoalProgress(goal: FinancialGoalEntity, newAmountCentavos: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            financeRepository.updateGoal(goal.copy(currentAmount = newAmountCentavos))
+            financeRepository.updateGoal(goal.copy(currentAmount = newAmountCentavos.coerceAtLeast(0L)))
         }
     }
 
