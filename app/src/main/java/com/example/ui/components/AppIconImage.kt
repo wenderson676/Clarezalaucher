@@ -5,7 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,7 +20,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.example.launcher.AppItem
+import kotlin.math.abs
 
+/**
+ * Exibe o ícone de um aplicativo de forma otimizada.
+ *
+ * O ícone é convertido para um bitmap pequeno, adequado ao tamanho
+ * real utilizado pela interface. O resultado é mantido em memória
+ * pelo remember enquanto o item permanecer na composição.
+ *
+ * Em caso de falha ao converter o ícone, é utilizado um fallback
+ * com a primeira letra do nome do aplicativo.
+ */
 @Composable
 fun AppIconImage(
     app: AppItem?,
@@ -34,46 +44,82 @@ fun AppIconImage(
     val label = app?.label ?: defaultLabel
 
     if (drawable != null) {
-        val bitmap = remember(drawable) {
+        /*
+         * O código anterior convertia TODOS os ícones para 144x144.
+         *
+         * Isso é desnecessariamente grande para ícones exibidos em
+         * aproximadamente 42-50dp e pode provocar grande pressão
+         * de memória durante uma rolagem rápida.
+         *
+         * Agora utilizamos um tamanho proporcional ao uso real.
+         */
+        val bitmap = remember(drawable, iconSize) {
             try {
-                drawable.toBitmap(width = 144, height = 144).asImageBitmap()
-            } catch (e: Exception) {
+                val targetSize = when {
+                    iconSize.value <= 44f -> 64
+                    iconSize.value <= 52f -> 72
+                    else -> 96
+                }
+
+                drawable
+                    .toBitmap(
+                        width = targetSize,
+                        height = targetSize
+                    )
+                    .asImageBitmap()
+            } catch (_: Exception) {
                 null
             }
         }
+
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,
                 contentDescription = label,
                 modifier = modifier
                     .size(iconSize)
-                    .clip(RoundedCornerShape(shapeRadius))
+                    .clip(
+                        RoundedCornerShape(shapeRadius)
+                    )
             )
+
             return
         }
     }
 
-    // High quality fallback avatar
-    val letter = label.firstOrNull()?.uppercaseChar() ?: 'A'
+    /*
+     * Fallback seguro:
+     * se algum aplicativo tiver um ícone inválido ou não puder
+     * ser convertido, a bandeja continua funcionando normalmente.
+     */
+    val letter = label
+        .firstOrNull()
+        ?.uppercaseChar()
+        ?: 'A'
+
     val backgroundColor = remember(label) {
         val palette = listOf(
-            Color(0xFF1E88E5), // Vivid Blue
-            Color(0xFF43A047), // Vivid Emerald
-            Color(0xFF8E24AA), // Vivid Purple
-            Color(0xFFE64A19), // Vivid Orange
-            Color(0xFF00897B), // Vivid Teal
-            Color(0xFFD81B60), // Vivid Pink
-            Color(0xFF3949AB), // Vivid Indigo
-            Color(0xFFFB8C00)  // Vivid Amber
+            Color(0xFF1E88E5),
+            Color(0xFF43A047),
+            Color(0xFF8E24AA),
+            Color(0xFFE64A19),
+            Color(0xFF00897B),
+            Color(0xFFD81B60),
+            Color(0xFF3949AB),
+            Color(0xFFFB8C00)
         )
-        val hash = kotlin.math.abs(label.hashCode())
+
+        val hash = abs(label.hashCode())
+
         palette[hash % palette.size]
     }
 
     Box(
         modifier = modifier
             .size(iconSize)
-            .clip(RoundedCornerShape(shapeRadius))
+            .clip(
+                RoundedCornerShape(shapeRadius)
+            )
             .background(backgroundColor),
         contentAlignment = Alignment.Center
     ) {
