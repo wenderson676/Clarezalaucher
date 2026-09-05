@@ -1,0 +1,116 @@
+<resources>
+    <string name="app_name">Clareza Launcher</string>
+    <string name="app_tagline">Menos distração, mais controle</string>
+    
+    <!-- Home & Launcher -->
+    <string name="balance_available">Saldo disponível</string>
+    <string name="balance_hidden">R$ ••••••</string>
+    <string name="upcoming_bills">Contas próximas: %s</string>
+    <string name="available_after_bills">Disponível após contas: %s</string>
+    <string name="btn_quick_register">+ Registrar</string>
+    <string name="apps_label">Apps</string>
+    <string name="search_apps_hint">Pesquisar aplicativos…</string>
+    <string name="favorites_title">Favoritos</string>
+    <string name="all_apps_title">Aplicativos</string>
+    <string name="no_apps_found">Nenhum aplicativo encontrado</string>
+    
+    <!-- App Context Menu -->
+    <string name="menu_open">Abrir</string>
+    <string name="menu_app_info">Informações</string>
+    <string name="menu_add_favorite">Adicionar aos favoritos</string>
+    <string name="menu_remove_favorite">Remover dos favoritos</string>
+    <string name="menu_uninstall">Desinstalar</string>
+    <string name="menu_hide_focus">Ocultar no Modo Foco</string>
+    <string name="menu_unhide_focus">Exibir no Modo Foco</string>
+    
+    <!-- Finance Navigation & Tabs -->
+    <string name="finance_title">Financeiro</string>
+    <string name="tab_overview">Visão Geral</string>
+    <string name="tab_statement">Extrato</string>
+    <string name="tab_accounts">Contas</string>
+    <string name="tab_recurring">Recorrentes</string>
+    <string name="tab_budgets">Orçamento</string>
+    <string name="tab_goals">Metas</string>
+    <string name="tab_forecast">Previsão</string>
+    <string name="how_much_can_i_spend">Quanto posso gastar?</string>
+    
+    <!-- Transaction Types -->
+    <string name="type_income">Receita</string>
+    <string name="type_expense">Despesa</string>
+    <string name="type_transfer">Transferência</string>
+    
+    <!-- Form Labels -->
+    <string name="amount_label">Valor</string>
+    <string name="category_label">Categoria</string>
+    <string name="account_label">Conta</string>
+    <string name="target_account_label">Conta de Destino</string>
+    <string name="description_label">Descrição</string>
+    <string name="description_optional">Descrição (opcional)</string>
+    <string name="date_label">Data</string>
+    <string name="btn_save">Salvar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_delete">Excluir</string>
+    <string name="btn_edit">Editar</string>
+    <string name="btn_confirm">Confirmar</string>
+    <string name="btn_close">Fechar</string>
+    
+    <!-- Quick NL Parser -->
+    <string name="ultra_quick_title">Registro Rápido Inteligente</string>
+    <string name="ultra_quick_hint">Ex: 35 mercado ou recebi 750 diaria</string>
+    <string name="quick_voice_record">Gravar por voz</string>
+    <string name="confirm_voice_transcription">Confirmar transcrição de voz</string>
+    
+    <!-- Accounts -->
+    <string name="account_cash">Dinheiro</string>
+    <string name="account_bank">Conta Bancária</string>
+    <string name="account_wallet">Carteira</string>
+    <string name="account_savings">Poupança</string>
+    <string name="account_digital">Conta Digital</string>
+    <string name="account_credit">Cartão de Crédito</string>
+    <string name="total_net_worth">Patrimônio financeiro total: %s</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Configurações</string>
+    <string name="section_launcher">Launcher</string>
+    <string name="section_finance">Financeiro</string>
+    <string name="section_privacy">Privacidade &amp; Dados</string>
+    <string name="section_system">Sistema</string>
+    <string name="section_about">Sobre</string>
+    
+    <string name="pref_focus_mode">Modo Foco</string>
+    <string name="pref_focus_mode_desc">Reduz distrações e exibe apenas apps essenciais</string>
+    <string name="pref_ultra_simple_mode">Modo Ultra Simples</string>
+    <string name="pref_ultra_simple_desc">Interface minimalista extrema com o mínimo absoluto</string>
+    <string name="pref_hide_balance">Ocultar saldo por padrão</string>
+    <string name="pref_show_battery">Mostrar nível da bateria</string>
+    <string name="pref_theme">Tema visual</string>
+    <string name="pref_theme_system">Seguir sistema</string>
+    <string name="pref_theme_light">Claro</string>
+    <string name="pref_theme_dark">Escuro</string>
+    <string name="pref_theme_oled">OLED Preto Puro</string>
+    
+    <string name="pref_export_json">Exportar backup (JSON)</string>
+    <string name="pref_export_csv">Exportar extrato (CSV)</string>
+    <string name="pref_import_backup">Restaurar backup (JSON)</string>
+    <string name="pref_clear_data">Apagar todos os dados</string>
+    <string name="pref_set_default_launcher">Definir como Launcher Padrão</string>
+    <string name="pref_system_settings">Configurações do Android</string>
+    
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Bem-vindo ao Clareza Launcher</string>
+    <string name="onboarding_welcome_desc">O celular como ferramenta, o dinheiro sob controle e a mente livre de distrações.</string>
+    <string name="onboarding_step_apps">1. Aplicativos Principais</string>
+    <string name="onboarding_step_finance">2. Controle Financeiro</string>
+    <string name="onboarding_step_account">3. Primeira Conta</string>
+    <string name="onboarding_step_ready">4. Tudo Pronto</string>
+    <string name="btn_start">Começar</string>
+    <string name="btn_next">Próximo</string>
+    <string name="btn_skip">Pular</string>
+    <string name="btn_finish">Concluir</string>
+    
+    <!-- Alerts & Insights -->
+    <string name="alert_bill_due_tomorrow">Conta %1$s de %2$s vence amanhã!</string>
+    <string name="alert_cashflow_risk">Atenção: seu saldo projetado poderá ficar negativo por volta de %s.</string>
+    <string name="insight_category_increase">Suas despesas com %1$s somam %2$s este mês.</string>
+    <string name="insight_upcoming_ratio">Contas previstas representam %d%% do seu saldo atual.</string>
+</resources>

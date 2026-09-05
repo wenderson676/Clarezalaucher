@@ -1,0 +1,6 @@
+{
+  "name": "Clareza Launcher",
+  "description": "Launcher Android minimalista com controle financeiro pessoal simples, rápido, privado e offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
