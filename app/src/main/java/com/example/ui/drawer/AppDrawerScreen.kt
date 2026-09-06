@@ -721,19 +721,19 @@ fun AppDrawerScreen(
                                     "frequent_${app.packageName}_$index"
                                 }
                             ) { _, app ->
-
-                                FrequentAppItem(
-                                    app = app,
-                                    onClick = {
-                                        onLaunchApp(
-                                            app
-                                        )
-                                    },
-                                    onLongClick = {
-                                        onAppLongClick(
-                                            app
-                                              }
-                                )
+FrequentAppItem(
+    app = app,
+    onClick = {
+        onLaunchApp(
+            app
+        )
+    },
+    onLongClick = {
+        onAppLongClick(
+            app
+        )
+    }
+)
                             }
                         }
                     }
