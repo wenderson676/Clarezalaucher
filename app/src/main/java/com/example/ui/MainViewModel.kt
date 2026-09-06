@@ -58,7 +58,8 @@ data class MainUiState(
     val hiddenPackages: Set<String> = emptySet(),
     val appUsageCounts: Map<String, Int> = emptyMap(),
     val frequentlyUsedApps: List<AppItem> = emptyList(),
-    val primaryAccountId: Long? = null
+    val primaryAccountId: Long? = null,
+    val accountBalances: Map<Long, Long> = emptyMap()
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -200,6 +201,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 allRecurring,
                 allGoals
             ) { txs, accs, cats, recs, goals ->
+                val accountBalances = accs.associate { account ->
+                    account.id to financeRepository.getAccountBalance(account, txs)
+                }
                 val available = financeRepository.getTotalAvailableBalance(accs, txs)
                 val netWorth = financeRepository.getTotalNetWorth(accs, txs)
 
@@ -251,6 +255,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.value = _uiState.value.copy(
                     totalAvailableBalance = available,
                     totalNetWorth = netWorth,
+                    accountBalances = accountBalances,
                     monthIncomeCentavos = monthIncome,
                     monthExpenseCentavos = monthExpense,
                     todaySpentCentavos = todaySpent,

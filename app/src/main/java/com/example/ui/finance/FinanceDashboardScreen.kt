@@ -124,6 +124,7 @@ fun FinanceDashboardScreen(
     budgets: List<BudgetEntity>,
     totalAvailableBalance: Long,
     totalNetWorth: Long,
+    accountBalances: Map<Long, Long> = emptyMap(),
     upcomingBills: List<UpcomingBill>,
     spendingLimit: SpendingLimitCalculation,
     isPrivacyEnabled: Boolean,
@@ -334,6 +335,7 @@ fun FinanceDashboardScreen(
                         transactions = transactions,
                         categories = categories,
                         accounts = accounts,
+                        accountBalances = accountBalances,
                         budgets = budgets,
                         goals = goals,
                         recurring = recurring,
@@ -587,6 +589,7 @@ private fun FinanceHomeCardsContent(
     transactions: List<TransactionEntity>,
     categories: List<CategoryEntity>,
     accounts: List<AccountEntity>,
+    accountBalances: Map<Long, Long>,
     budgets: List<BudgetEntity>,
     goals: List<FinancialGoalEntity>,
     recurring: List<RecurringTransactionEntity>,
@@ -995,9 +998,14 @@ private fun FinanceHomeCardsContent(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = CurrencyFormatter.formatCentavos(acc.currentBalance, isPrivacyEnabled),
+                                        text = CurrencyFormatter.formatCentavos(
+                                            accountBalances[acc.id] ?: acc.initialBalance,
+                                            isPrivacyEnabled
+                                        ),
                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = if (acc.currentBalance >= 0) MaterialTheme.colorScheme.onSurface else FinanceExpenseRed
+                                        color = if ((accountBalances[acc.id] ?: acc.initialBalance) >= 0) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else FinanceExpenseRed
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Icon(

@@ -307,6 +307,7 @@ class MainActivity : ComponentActivity() {
                                     budgets = budgets,
                                     totalAvailableBalance = uiState.totalAvailableBalance,
                                     totalNetWorth = uiState.totalNetWorth,
+                                    accountBalances = uiState.accountBalances,
                                     upcomingBills = uiState.upcomingBills,
                                     spendingLimit = uiState.spendingLimit,
                                     isPrivacyEnabled = uiState.isPrivacyEnabled,
