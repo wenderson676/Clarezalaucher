@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.example.launcher.AppItem
-import kotlin.math.abs
 
 /**
  * Exibe o ícone de um aplicativo de forma otimizada.
@@ -109,9 +108,9 @@ fun AppIconImage(
             Color(0xFFFB8C00)
         )
 
-        val hash = abs(label.hashCode())
+         val index = Math.floorMod(label.hashCode(), palette.size)
 
-        palette[hash % palette.size]
+palette[index]
     }
 
     Box(
